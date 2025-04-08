@@ -1,605 +1,722 @@
-local a = game:GetService("StarterGui");
-local b = game:GetService("Players");
-local c = game:GetService("RunService");
-local d = game:GetService("Lighting");
-local e = game:GetService("TweenService");
-local f = b.LocalPlayer;
-while not f do
+-- Services
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+
+-- Player variables
+local localPlayer = Players.LocalPlayer
+while not localPlayer do
     task.wait()
-    f = b.LocalPlayer
+    localPlayer = Players.LocalPlayer
 end
 
-local function g(h)
-    local i = Instance.new("Sound");
-    i.SoundId = h;
-    i.Parent = workspace;
-    i:Play();
-    i.Ended:Connect(function()
-        i:Destroy();
-    end);
+-- Sound function with better error handling
+local function playSound(soundId)
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId
+    sound.Parent = workspace
+    
+    local success, err = pcall(function()
+        sound:Play()
+    end)
+    
+    if not success then
+        warn("Failed to play sound: " .. err)
+        sound:Destroy()
+        return
+    end
+    
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
 end
 
 -- Load external scripts with error handling
-local success, err = pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/hm5650/Lololoololoolollolooo/refs/heads/main/Lol"))();
-end)
-if not success then
-    warn("Failed to load first external script: " .. err)
+local function loadExternalScript(url)
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/OBFhm5650lol/Credit-obfuscated-lol/refs/heads/main/OBFCredit"))()
+    end)
+    
+    if not success then
+        warn("Failed to load external script: " .. err)
+        return false
+    end
+    return true
 end
 
-task.wait(5);
-g("rbxassetid://5607311932");
+-- Load first external script
+task.wait()
+playSound("rbxassetid://12221831")
 
-local j
-success, err = pcall(function()
-    j = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/Arceus-X-UI-Library/main/source.lua"))();
+-- Load UI library
+local uiLibrary
+local success, err = pcall(function()
+    uiLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/Arceus-X-UI-Library/main/source.lua"))()
 end)
-if not success or not j then
+
+if not success or not uiLibrary then
     error("Failed to load UI library: " .. (err or "unknown error"))
 end
 
-j:SetTitle("Hitblox (v4.4)");
-j:SetIcon("http://www.roblox.com/asset/?id=91494439284649");
-j:SetTheme("HighContrast");
-task.wait(0.1);
-g("rbxassetid://195868961");
+-- Configure UI
+uiLibrary:SetTitle("Hitblox (v4.5)")
+uiLibrary:SetIcon("http://www.roblox.com/asset/?id=91738788645337")
+uiLibrary:SetTheme("HighContrast")
+task.wait(0.1)
+playSound("rbxassetid://195868961")
 
-local k = 20;
-local l = 0.89;
-local m = false;
-local n = false;
-local o = {};
-local p, q, r, s;
+-- Configuration variables
+local hitboxSize = 10
+local hitboxTransparency = 0.9
+local hitboxEnabled = false
+local espEnabled = false
+local espGuis = {} -- Stores ESP GUI objects
+local hitboxIncreaseButton, hitboxDecreaseButton, fovIncreaseButton, fovDecreaseButton
 
-local function t(u)
-    return (u ~= f) and ((u.Team ~= f.Team) or (u.Team == nil));
+-- Helper functions
+local function isEnemy(player)
+    return (player ~= localPlayer) and ((player.Team ~= localPlayer.Team) or (player.Team == nil))
 end
 
-local function v(u)
-    if not u then
-        return;
-    end
-    local w = u:FindFirstChild("HumanoidRootPart");
-    if w then
-        w.Size = Vector3.new(k, k, k);
-        w.Transparency = l;
-        w.BrickColor = BrickColor.new("Dark red");
-        w.Material = Enum.Material.Neon;
-        w.CanCollide = false;
-        if not w:FindFirstChild("OriginalSize") then
-            local originalSize = Instance.new("Vector3Value");
-            originalSize.Name = "OriginalSize";
-            originalSize.Value = Vector3.new(2, 2, 1);
-            originalSize.Parent = w;
+local function applyHitbox(character)
+    if not character then return end
+    
+    -- HumanoidRootPart modifications
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        rootPart.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+        rootPart.Transparency = hitboxTransparency
+        rootPart.BrickColor = BrickColor.new("Dark red")
+        rootPart.Material = Enum.Material.ForceField
+        rootPart.CanCollide = false
+        
+        if not rootPart:FindFirstChild("OriginalSize") then
+            local originalSize = Instance.new("Vector3Value")
+            originalSize.Name = "OriginalSize"
+            originalSize.Value = Vector3.new(2, 2, 1)
+            originalSize.Parent = rootPart
         end
     end
-    local x = u:FindFirstChild("Head");
-    if x then
-        x.Size = Vector3.new(k, k, k);
-        x.Transparency = l;
-        x.BrickColor = BrickColor.new("Bright red");
-        x.Material = Enum.Material.Neon;
-        x.CanCollide = false;
-        x.Massless = true;
-        if not x:FindFirstChild("OriginalSize") then
-            local originalSize = Instance.new("Vector3Value");
-            originalSize.Name = "OriginalSize";
-            originalSize.Value = Vector3.new(2, 1, 1);
-            originalSize.Parent = x;
-        end
-    end
-end
-
-local function y(u)
-    if not u then
-        return;
-    end
-    local w = u:FindFirstChild("HumanoidRootPart");
-    if w and w:FindFirstChild("OriginalSize") then
-        w.Size = w.OriginalSize.Value;
-        w.Transparency = 1;
-        w.BrickColor = BrickColor.new("Medium stone grey");
-        w.Material = Enum.Material.Plastic;
-        w.CanCollide = true;
-    end
-    local x = u:FindFirstChild("Head");
-    if x and x:FindFirstChild("OriginalSize") then
-        x.Size = x.OriginalSize.Value;
-        x.Transparency = 1;
-        x.BrickColor = BrickColor.new("Medium stone grey");
-        x.Material = Enum.Material.Plastic;
-        x.CanCollide = true;
-        x.Massless = false;
-    end
-end
-
-local function z(u)
-    if not u then
-        return;
-    end
-    for A, B in ipairs(u:GetDescendants()) do
-        if B:IsA("BasePart") then
-            B.Size = Vector3.new(1, 1, 1);
-            B.Transparency = 0.8;
-            B.BrickColor = BrickColor.new("Dark grey");
-            B.Material = Enum.Material.SmoothPlastic;
-            B.CanCollide = false;
-            B.Anchored = false;
-            B.Velocity = Vector3.new(0, -50, 0);
+    
+    -- Head modifications
+    local head = character:FindFirstChild("Head")
+    if head then
+        head.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+        head.Transparency = hitboxTransparency
+        head.BrickColor = BrickColor.new("Bright red")
+        head.Material = Enum.Material.ForceField
+        head.CanCollide = false
+        head.Massless = true
+        
+        if not head:FindFirstChild("OriginalSize") then
+            local originalSize = Instance.new("Vector3Value")
+            originalSize.Name = "OriginalSize"
+            originalSize.Value = Vector3.new(2, 1, 1)
+            originalSize.Parent = head
         end
     end
 end
 
-local function C()
-    for A, u in ipairs(b:GetPlayers()) do
-        if (t(u) and u.Character) then
-            v(u.Character);
+local function resetHitbox(character)
+    if not character then return end
+    
+    -- Reset HumanoidRootPart
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if rootPart and rootPart:FindFirstChild("OriginalSize") then
+        rootPart.Size = rootPart.OriginalSize.Value
+        rootPart.Transparency = 1
+        rootPart.BrickColor = BrickColor.new("Medium stone grey")
+        rootPart.Material = Enum.Material.Plastic
+        rootPart.CanCollide = true
+    end
+    
+    -- Reset Head
+    local head = character:FindFirstChild("Head")
+    if head and head:FindFirstChild("OriginalSize") then
+        head.Size = head.OriginalSize.Value
+        head.Transparency = 1
+        head.BrickColor = BrickColor.new("Medium stone grey")
+        head.Material = Enum.Material.Plastic
+        head.CanCollide = true
+        head.Massless = false
+    end
+end
+
+local function destroyCharacterParts(character)
+    if not character then return end
+    
+    for _, descendant in ipairs(character:GetDescendants()) do
+        if descendant:IsA("BasePart") then
+            descendant.Size = Vector3.new(1, 1, 1)
+            descendant.Transparency = 0.8
+            descendant.BrickColor = BrickColor.new("Dark grey")
+            descendant.Material = Enum.Material.SmoothPlastic
+            descendant.CanCollide = false
+            descendant.Anchored = false
+            descendant.Velocity = Vector3.new(0, -50, 0)
         end
     end
 end
 
-local function D()
-    for A, u in ipairs(b:GetPlayers()) do
-        if u.Character then
-            y(u.Character);
+local function applyHitboxesToAllPlayers()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if isEnemy(player) and player.Character then
+            applyHitbox(player.Character)
         end
     end
 end
 
-local E = false;
-local F;
-local function G(h)
-    E = h;
-    g("rbxassetid://195868961");
-    if E then
-        C();
-        if not F then
-            F = coroutine.create(function()
-                while E and task.wait(0.5) do
-                    C();
+local function resetHitboxesOnAllPlayers()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            resetHitbox(player.Character)
+        end
+    end
+end
+
+-- Hitbox toggle system
+local hitboxCoroutine
+local function toggleHitboxes(enabled)
+    hitboxEnabled = enabled
+    playSound("rbxassetid://12221976")
+    
+    if enabled then
+        applyHitboxesToAllPlayers()
+        
+        if not hitboxCoroutine then
+            hitboxCoroutine = coroutine.create(function()
+                while hitboxEnabled and task.wait(0.5) do
+                    applyHitboxesToAllPlayers()
                 end
-            end);
-            coroutine.resume(F);
+            end)
+            coroutine.resume(hitboxCoroutine)
         end
     else
-        if F then
-            coroutine.close(F);
-            F = nil;
+        if hitboxCoroutine then
+            coroutine.close(hitboxCoroutine)
+            hitboxCoroutine = nil
         end
-        D();
+        resetHitboxesOnAllPlayers()
     end
-    if (p and q) then
-        p.Visible = E;
-        q.Visible = E;
+    
+    -- Update button visibility
+    if hitboxIncreaseButton and hitboxDecreaseButton then
+        hitboxIncreaseButton.Visible = enabled
+        hitboxDecreaseButton.Visible = enabled
     end
 end
 
-local function H(u)
-    if o[u] then
-        o[u]:Destroy();
-        o[u] = nil;
+-- ESP system
+local function createESP(player)
+    if espGuis[player] then
+        espGuis[player]:Destroy()
+        espGuis[player] = nil
     end
-    if not u or not u.Character then
-        return;
-    end
-    if t(u) then
-        local x = u.Character:FindFirstChild("Head");
-        local w = u.Character:FindFirstChild("HumanoidRootPart");
-        local I = x or w;
-        if not I then
-            return;
-        end
-        local J = Instance.new("BillboardGui");
-        J.Name = "ESP";
-        J.Adornee = I;
-        J.Size = UDim2.new(0, 100, 0, 50);
-        J.StudsOffset = Vector3.new(0, 2, 0);
-        J.AlwaysOnTop = true;
-        local K = Instance.new("TextLabel", J);
-        K.Size = UDim2.new(1, 0, 1, 0);
-        K.BackgroundTransparency = 1;
-        K.TextColor3 = Color3.new(1, 0, 0);
-        K.TextStrokeTransparency = 0;
-        K.Text = u.Name;
-        K.TextScaled = true;
-        K.Font = Enum.Font.SourceSansBold;
-        o[u] = J;
-        J.Parent = I;
-        local function L()
-            if (u.Character and u.Character:FindFirstChild("HumanoidRootPart") and f.Character and f.Character:FindFirstChild("HumanoidRootPart")) then
-                local M = (f.Character.HumanoidRootPart.Position - u.Character.HumanoidRootPart.Position).Magnitude;
-                local N = 10;
-                local O = 100;
-                local P = math.clamp(O - (M * 0.5), N, O);
-                J.Size = UDim2.new(0, P, 0, P * 0.5);
+    
+    if not player or not player.Character then return end
+    
+    if isEnemy(player) then
+        local head = player.Character:FindFirstChild("Head")
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        local targetPart = head or rootPart
+        
+        if not targetPart then return end
+        
+        -- Create ESP GUI
+        local espGui = Instance.new("BillboardGui")
+        espGui.Name = "ESP"
+        espGui.Adornee = targetPart
+        espGui.Size = UDim2.new(0, 100, 0, 50)
+        espGui.StudsOffset = Vector3.new(0, 2, 0)
+        espGui.AlwaysOnTop = true
+        
+        local espLabel = Instance.new("TextLabel", espGui)
+        espLabel.Size = UDim2.new(1, 0, 1, 0)
+        espLabel.BackgroundTransparency = 1
+        espLabel.TextColor3 = Color3.new(1, 0, 0)
+        espLabel.TextStrokeTransparency = 0
+        espLabel.Text = player.Name
+        espLabel.TextScaled = true
+        espLabel.Font = Enum.Font.SourceSansBold
+        
+        espGuis[player] = espGui
+        espGui.Parent = targetPart
+        
+        -- Update function for dynamic sizing
+        local function updateEspSize()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and 
+               localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local distance = (localPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                local minSize = 10
+                local maxSize = 100
+                local calculatedSize = math.clamp(maxSize - (distance * 0.5), minSize, maxSize)
+                espGui.Size = UDim2.new(0, calculatedSize, 0, calculatedSize * 0.5)
             end
         end
-        local Q = tick();
+        
+        -- Update periodically
+        local lastUpdate = tick()
         local connection
-        connection = c.RenderStepped:Connect(function()
-            if not J or not J.Parent then
+        connection = RunService.RenderStepped:Connect(function()
+            if not espGui or not espGui.Parent then
                 connection:Disconnect()
                 return
             end
-            if ((tick() - Q) >= 0.1) then
-                L();
-                Q = tick();
+            
+            if (tick() - lastUpdate) >= 0.1 then
+                updateEspSize()
+                lastUpdate = tick()
             end
-        end);
+        end)
     end
 end
 
-local function R(h)
-    n = h;
-    g("rbxassetid://195868961");
-    if n then
-        for A, u in ipairs(b:GetPlayers()) do
-            if t(u) then
-                H(u);
+local function toggleESP(enabled)
+    espEnabled = enabled
+    playSound("rbxassetid://12221976")
+    
+    if enabled then
+        -- Create ESP for all enemies
+        for _, player in ipairs(Players:GetPlayers()) do
+            if isEnemy(player) then
+                createESP(player)
             end
         end
     else
-        for A, S in pairs(o) do
-            if S then
-                S:Destroy();
+        -- Remove all ESP GUIs
+        for _, gui in pairs(espGuis) do
+            if gui then
+                gui:Destroy()
             end
         end
-        o = {};
+        espGuis = {}
     end
 end
 
-local function T(u)
-    if not u then return end
-    if t(u) then
-        u.CharacterAdded:Connect(function(B)
-            task.wait(1);
-            if n then
-                H(u);
+-- Player tracking system
+local function trackPlayer(player)
+    if not player then return end
+    
+    if isEnemy(player) then
+        -- Handle character added
+        player.CharacterAdded:Connect(function(character)
+            task.wait(1)
+            if espEnabled then
+                createESP(player)
             end
-            if E then
-                y(B);
+            if hitboxEnabled then
+                resetHitbox(character)
             end
-        end);
-        u.CharacterRemoving:Connect(function()
-            if u.Character then
-                z(u.Character);
+        end)
+        
+        -- Handle character removed
+        player.CharacterRemoving:Connect(function()
+            if player.Character then
+                destroyCharacterParts(player.Character)
             end
-        end);
-        if (u.Character and n) then
-            H(u);
+        end)
+        
+        -- Handle existing character
+        if player.Character and espEnabled then
+            createESP(player)
         end
     end
 end
 
-for A, u in ipairs(b:GetPlayers()) do
-    T(u);
+-- Initialize tracking for all players
+for _, player in ipairs(Players:GetPlayers()) do
+    trackPlayer(player)
 end
 
-b.PlayerAdded:Connect(T);
-b.PlayerRemoving:Connect(function(u)
-    if o[u] then
-        o[u]:Destroy();
-        o[u] = nil;
-    end
-end);
+-- Player added/removed events
+Players.PlayerAdded:Connect(trackPlayer)
 
-j:AddButton("FBright", function()
-    g("rbxassetid://6228337171");
-    d.Brightness = 2;
-    d.OutdoorAmbient = Color3.fromRGB(255, 255, 255);
-    d.Ambient = Color3.fromRGB(255, 255, 255);
-    d.TimeOfDay = "14:00:00";
-    d.FogStart = 0;
-    d.FogEnd = 100000;
-    d.FogColor = Color3.fromRGB(255, 255, 255);
+Players.PlayerRemoving:Connect(function(player)
+    if espGuis[player] then
+        espGuis[player]:Destroy()
+        espGuis[player] = nil
+    end
+end)
+
+-- UI Elements
+
+-- Brightness button
+uiLibrary:AddButton("FullBright", function()
+    playSound("rbxassetid://12221967")
+    
+    -- Set lighting properties
+    Lighting.Brightness = 2
+    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    Lighting.TimeOfDay = "14:00:00"
+    Lighting.FogStart = 0
+    Lighting.FogEnd = 100000
+    Lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    
+    -- Maintain lighting properties
     local connection
-    connection = c.Heartbeat:Connect(function()
-        d.Brightness = 2;
-        d.OutdoorAmbient = Color3.fromRGB(255, 255, 255);
-        d.Ambient = Color3.fromRGB(255, 255, 255);
-        d.TimeOfDay = "14:00:00";
-        d.FogStart = 0;
-        d.FogEnd = 100000;
-        d.FogColor = Color3.fromRGB(255, 255, 255);
-    end);
-    -- Store connection for later cleanup
+    connection = RunService.Heartbeat:Connect(function()
+        Lighting.Brightness = 2
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.TimeOfDay = "14:00:00"
+        Lighting.FogStart = 0
+        Lighting.FogEnd = 100000
+        Lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    -- Store connection for cleanup
     getgenv().BrightnessConnection = connection
-end);
+end)
 
-j:AddButton("AntiLag", function()
-    g("rbxassetid://6228337171");
-    local function U()
-        for A, B in pairs(workspace:GetDescendants()) do
-            if (B:IsA("Decal") and not B:IsDescendantOf(b)) then
-                B:Destroy();
-            end
-            if (B:IsA("MeshPart") and not B:IsDescendantOf(b)) then
-                B:Destroy();
-            end
-            if B:IsA("SurfaceGui") then
-                B:Destroy();
-            end
-        end
-    end
-    task.wait();
-    for A, B in next, workspace:GetDescendants() do
-        if B:IsA("Part") then
-            B.Material = Enum.Material.SmoothPlastic;
-        end
-    end
-end);
+-- Anti-Lag button
+uiLibrary:AddButton("AntiLag", function()
+    playSound("rbxassetid://12221967")
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/OBFhm5650lol/Al/refs/heads/main/AntiLag", true))()
+end)
 
-local V = false;
-j:AddToggle("FOV Toggle", function(h)
-    V = h;
-    g("rbxassetid://195868961");
-    if (r and s) then
-        r.Visible = V;
-        s.Visible = V;
-    end
-end, false);
+uiLibrary:AddButton("AntiKick", function()
+    playSound("rbxassetid://12221967")
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/OBFhm5650lol/AntkickLol/refs/heads/main/Antikicklol"))()
+end)
 
-if (r and s) then
-    r.Visible = false;
-    s.Visible = false;
+-- FOV system
+local fovEnabled = false
+uiLibrary:AddToggle("FOV Toggle", function(enabled)
+    fovEnabled = enabled
+    playSound("rbxassetid://12221976")
+    
+    if fovIncreaseButton and fovDecreaseButton then
+        fovIncreaseButton.Visible = enabled
+        fovDecreaseButton.Visible = enabled
+    end
+end, false)
+
+-- Initialize FOV buttons visibility
+if fovIncreaseButton and fovDecreaseButton then
+    fovIncreaseButton.Visible = false
+    fovDecreaseButton.Visible = false
 end
 
-r = j:AddButton("(Fov +)", function()
-    g("rbxassetid://6228337171");
-    game.Workspace.CurrentCamera.FieldOfView = math.clamp(game.Workspace.CurrentCamera.FieldOfView + 5, 1, 120);
-end);
+-- FOV adjustment buttons
+fovIncreaseButton = uiLibrary:AddButton("(Fov +)", function()
+    playSound("rbxassetid://12221967")
+    local camera = workspace.CurrentCamera
+    camera.FieldOfView = math.clamp(camera.FieldOfView + 5, 1, 120)
+end)
 
-s = j:AddButton("(Fov -)", function()
-    g("rbxassetid://6228337171");
-    game.Workspace.CurrentCamera.FieldOfView = math.clamp(game.Workspace.CurrentCamera.FieldOfView - 5, 1, 120);
-end);
+fovDecreaseButton = uiLibrary:AddButton("(Fov -)", function()
+    playSound("rbxassetid://12221967")
+    local camera = workspace.CurrentCamera
+    camera.FieldOfView = math.clamp(camera.FieldOfView - 5, 1, 120)
+end)
 
-j:AddToggle("Expand Hitbox", function(h)
-    G(h);
-end, false);
+-- Hitbox toggle
+uiLibrary:AddToggle("Expand Hitbox", function(enabled)
+    toggleHitboxes(enabled)
+end, false)
 
-p = j:AddButton("(Hitbox +)", function()
-    g("rbxassetid://6228337171");
-    k = math.clamp(k + 5, 1, 50);
-    if E then
-        C();
+-- Hitbox adjustment buttons
+hitboxIncreaseButton = uiLibrary:AddButton("(Hitbox +)", function()
+    playSound("rbxassetid://12221967")
+    hitboxSize = math.clamp(hitboxSize + 5, 1, 50)
+    
+    if hitboxEnabled then
+        applyHitboxesToAllPlayers()
     end
-end);
+end)
 
-q = j:AddButton("(Hitbox -)", function()
-    g("rbxassetid://6228337171");
-    k = math.clamp(k - 5, 1, 50);
-    if E then
-        C();
+hitboxDecreaseButton = uiLibrary:AddButton("(Hitbox -)", function()
+    playSound("rbxassetid://12221967")
+    hitboxSize = math.clamp(hitboxSize - 5, 1, 50)
+    
+    if hitboxEnabled then
+        applyHitboxesToAllPlayers()
     end
-end);
+end)
 
-j:AddToggle("ESP", function(h)
-    R(h);
-end, false);
+-- ESP toggle
+uiLibrary:AddToggle("ESP", function(enabled)
+    toggleESP(enabled)
+end, false)
 
-j:AddToggle("Fpp Toggle", function(h)
-    g("rbxassetid://195868961");
-    if h then
-        local W = game.Workspace.CurrentCamera;
-        W.CameraType = Enum.CameraType.Custom;
-        f.CameraMode = Enum.CameraMode.LockFirstPerson;
+-- First-person toggle
+uiLibrary:AddToggle("Fpp Toggle", function(enabled)
+    playSound("rbxassetid://12221976")
+    
+    if enabled then
+        local camera = workspace.CurrentCamera
+        camera.CameraType = Enum.CameraType.Custom
+        localPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+        
+        -- Clean up existing connection
         if getgenv().cameraLockConnection then
-            getgenv().cameraLockConnection:Disconnect();
-            getgenv().cameraLockConnection = nil;
+            getgenv().cameraLockConnection:Disconnect()
+            getgenv().cameraLockConnection = nil
         end
     else
-        f.CameraMode = Enum.CameraMode.Classic;
+        localPlayer.CameraMode = Enum.CameraMode.Classic
     end
-end, false);
+end, false)
 
-j:AddButton("AimAssist", function()
-    g("rbxassetid://6228337171");
-    local X = Instance.new("ScreenGui");
-    X.Parent = f:WaitForChild("PlayerGui");
-    X.ResetOnSpawn = false;
-    local Y = Instance.new("Frame");
-    Y.Size = UDim2.new(0, 99, 0, 44);
-    Y.Position = UDim2.new(0, 115, 0, 49);
-    Y.AnchorPoint = Vector2.new(0.5, 1);
-    Y.BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-    Y.BackgroundTransparency = 0.2;
-    Y.Active = true;
-    Y.Parent = X;
-    local Z = Instance.new("UICorner");
-    Z.CornerRadius = UDim.new(0.8, 0);
-    Z.Parent = Y;
-    local _ = Instance.new("TextButton");
-    _.Size = UDim2.new(1, 0, 1, 0);
-    _.Text = "Aim Assist";
-    _.BackgroundTransparency = 1;
-    _.TextColor3 = Color3.fromRGB(255, 255, 255);
-    _.TextSize = 10;
-    _.Parent = Y;
-    local a0 = Instance.new("UIStroke");
-    a0.Thickness = 2;
-    a0.Color = Color3.fromRGB(255, 255, 0);
-    a0.Enabled = false;
-    a0.Parent = Y;
-    local a1 = false;
-    _.MouseButton1Click:Connect(function()
-        a1 = not a1;
-        a0.Enabled = a1;
-        if not a1 then
-            local W = workspace.CurrentCamera;
-            if W then
-                W.CFrame = W.CFrame;
+-- Aim Assist system
+uiLibrary:AddButton("AimLock", function()
+    playSound("rbxassetid://12221967")
+    
+    -- Create UI elements
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+    screenGui.ResetOnSpawn = false
+    
+    -- Control panel
+    local controlPanel = Instance.new("Frame")
+    controlPanel.Size = UDim2.new(0, 99, 0, 44)
+    controlPanel.Position = UDim2.new(0, 115, 0, 49)
+    controlPanel.AnchorPoint = Vector2.new(0.5, 1)
+    controlPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    controlPanel.BackgroundTransparency = 0.2
+    controlPanel.Active = true
+    controlPanel.Parent = screenGui
+    
+    -- Round corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0.8, 0)
+    corner.Parent = controlPanel
+    
+    -- Toggle button
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(1, 0, 1, 0)
+    toggleButton.Text = "Aim Lock"
+    toggleButton.BackgroundTransparency = 1
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.TextSize = 10
+    toggleButton.Parent = controlPanel
+    
+    -- Highlight when active
+    local outline = Instance.new("UIStroke")
+    outline.Thickness = 2
+    outline.Color = Color3.fromRGB(255, 255, 0)
+    outline.Enabled = false
+    outline.Parent = controlPanel
+    
+    -- Target indicator
+    local targetIndicator = Instance.new("Frame")
+    targetIndicator.Size = UDim2.new(0, 144, 0, 144)
+    targetIndicator.Position = UDim2.new(0.5, -1, 0.5, -20)
+    targetIndicator.AnchorPoint = Vector2.new(0.5, 0.5)
+    targetIndicator.BackgroundTransparency = 1
+    targetIndicator.Parent = screenGui
+    
+    local targetOutline = Instance.new("UIStroke")
+    targetOutline.Thickness = 2
+    targetOutline.Color = Color3.fromRGB(1, 0, 0)
+    targetOutline.Parent = targetIndicator
+    
+    local targetCorner = Instance.new("UICorner")
+    targetCorner.CornerRadius = UDim.new(1, 0)
+    targetCorner.Parent = targetIndicator
+    
+    -- Toggle functionality
+    local aimAssistActive = false
+    toggleButton.MouseButton1Click:Connect(function()
+        aimAssistActive = not aimAssistActive
+        outline.Enabled = aimAssistActive
+        
+        if not aimAssistActive then
+            local camera = workspace.CurrentCamera
+            if camera then
+                camera.CFrame = camera.CFrame
             end
         end
-    end);
-    local a2 = Instance.new("Frame");
-    a2.Size = UDim2.new(0, 144, 0, 144);
-    a2.Position = UDim2.new(0.5, -1, 0.5, -20);
-    a2.AnchorPoint = Vector2.new(0.5, 0.5);
-    a2.BackgroundTransparency = 1;
-    a2.Parent = X;
-    local a3 = Instance.new("UIStroke");
-    a3.Thickness = 2;
-    a3.Color = Color3.fromRGB(1, 0, 0);
-    a3.Parent = a2;
-    local a4 = Instance.new("UICorner");
-    a4.CornerRadius = UDim.new(1, 0);
-    a4.Parent = a2;
-    local function a5(u)
-        if (game:GetService("Teams") and (#game:GetService("Teams"):GetTeams() > 1)) then
-            local a6 = f.Team;
-            local a7 = u.Team;
-            return (a6 ~= nil) and (a7 ~= nil) and (a6 ~= a7);
+    end)
+    
+    -- Enemy check function
+    local function isEnemyForAimAssist(player)
+        if game:GetService("Teams") and #game:GetService("Teams"):GetTeams() > 1 then
+            local localTeam = localPlayer.Team
+            local playerTeam = player.Team
+            return localTeam ~= nil and playerTeam ~= nil and localTeam ~= playerTeam
         else
-            return u ~= f;
+            return player ~= localPlayer
         end
     end
-    local function a8(a9, B)
-        local aa = f.Character;
-        if not aa then
-            return false;
+    
+    -- Visibility check function
+    local function isVisible(targetPosition, character)
+        local localCharacter = localPlayer.Character
+        if not localCharacter then return false end
+        
+        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return false end
+        
+        local ray = Ray.new(rootPart.Position, (targetPosition - rootPart.Position).Unit * 1000)
+        local hitPart, hitPosition = workspace:FindPartOnRay(ray, localCharacter)
+        
+        if hitPart then
+            return hitPart:IsDescendantOf(character)
         end
-        local ab = aa:FindFirstChild("HumanoidRootPart");
-        if not ab then
-            return false;
-        end
-        local ac = Ray.new(ab.Position, (a9 - ab.Position).Unit * 1000);
-        local ad, ae = workspace:FindPartOnRay(ac, aa);
-        if ad then
-            if ad:IsDescendantOf(B) then
-                return true;
-            else
-                return false;
-            end
-        end
-        return false;
+        return false
     end
-    local function af()
-        local ag = nil;
-        local ah = math.huge;
-        local aa = f.Character;
-        if not aa then
-            return nil;
-        end
-        local ab = aa:FindFirstChild("HumanoidRootPart");
-        if not ab then
-            return nil;
-        end
-        local ai = f:FindFirstChild("PlayerGui"):FindFirstChild("ScreenGui");
-        if not ai then
-            return nil;
-        end
-        local W = workspace.CurrentCamera;
-        local aj = a2.AbsolutePosition + (a2.AbsoluteSize / 2);
-        local ak = a2.AbsoluteSize.X / 2;
-        for A, u in pairs(game.Players:GetPlayers()) do
-            if (a5(u) and u.Character) then
-                local B = u.Character;
-                local al = B:FindFirstChild("HumanoidRootPart");
-                if al then
-                    local am, an = W:WorldToScreenPoint(al.Position);
-                    local ao = (Vector2.new(am.X, am.Y) - aj).Magnitude;
-                    if (an and (ao <= ak) and (ao < ah) and a8(al.Position, B)) then
-                        ah = ao;
-                        ag = u;
+    
+    -- Find best target function
+    local function findBestTarget()
+        local bestTarget = nil
+        local closestDistance = math.huge
+        local localCharacter = localPlayer.Character
+        
+        if not localCharacter then return nil end
+        
+        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return nil end
+        
+        local screenGui = localPlayer:FindFirstChild("PlayerGui"):FindFirstChild("ScreenGui")
+        if not screenGui then return nil end
+        
+        local camera = workspace.CurrentCamera
+        local targetCenter = targetIndicator.AbsolutePosition + (targetIndicator.AbsoluteSize / 2)
+        local targetRadius = targetIndicator.AbsoluteSize.X / 2
+        
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if isEnemyForAimAssist(player) and player.Character then
+                local character = player.Character
+                local enemyRoot = character:FindFirstChild("HumanoidRootPart")
+                
+                if enemyRoot then
+                    local screenPosition, onScreen = camera:WorldToScreenPoint(enemyRoot.Position)
+                    local distanceFromCenter = (Vector2.new(screenPosition.X, screenPosition.Y) - targetCenter).Magnitude
+                    
+                    if onScreen and distanceFromCenter <= targetRadius and distanceFromCenter < closestDistance and isVisible(enemyRoot.Position, character) then
+                        closestDistance = distanceFromCenter
+                        bestTarget = player
                     end
                 end
             end
         end
-        return ag;
+        
+        return bestTarget
     end
+    
+    -- Aim assist functionality
     local aimAssistConnection
-    aimAssistConnection = c.RenderStepped:Connect(function()
-        if a1 then
-            local ag = af();
-            if (ag and ag.Character) then
-                local al = ag.Character:FindFirstChild("HumanoidRootPart");
-                if al then
-                    local W = workspace.CurrentCamera;
-                    if W then
-                        local ap = al.Position;
-                        local aq = W.CFrame.Position;
-                        local ar = CFrame.new(aq, ap);
-                        W.CFrame = W.CFrame:Lerp(ar, 0.3);
+    aimAssistConnection = RunService.RenderStepped:Connect(function()
+        if aimAssistActive then
+            local target = findBestTarget()
+            
+            if target and target.Character then
+                local enemyRoot = target.Character:FindFirstChild("HumanoidRootPart")
+                
+                if enemyRoot then
+                    local camera = workspace.CurrentCamera
+                    if camera then
+                        local targetPosition = enemyRoot.Position
+                        local cameraPosition = camera.CFrame.Position
+                        local targetCFrame = CFrame.new(cameraPosition, targetPosition)
+                        camera.CFrame = camera.CFrame:Lerp(targetCFrame, 0.3)
                     end
                 end
             end
         end
-    end);
+    end)
+    
     -- Store connection for cleanup
     getgenv().AimAssistConnection = aimAssistConnection
-    local as = false;
-    local at = Vector2.new(0, 0);
-    local au = UDim2.new(0, 0, 0, 0);
-    Y.InputBegan:Connect(function(input)
-        if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
-            as = true;
-            at = input.Position;
-            au = Y.Position;
+    
+    -- Draggable UI functionality
+    local isDragging = false
+    local dragStartPosition = Vector2.new(0, 0)
+    local dragStartOffset = UDim2.new(0, 0, 0, 0)
+    
+    controlPanel.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStartPosition = input.Position
+            dragStartOffset = controlPanel.Position
         end
-    end);
-    Y.InputChanged:Connect(function(input)
-        if (((input.UserInputType == Enum.UserInputType.MouseMovement) or (input.UserInputType == Enum.UserInputType.Touch)) and as) then
-            local av = input.Position - at;
-            Y.Position = UDim2.new(au.X.Scale, au.X.Offset + av.X, au.Y.Scale, au.Y.Offset + av.Y);
-        end
-    end);
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
-        if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
-            as = false;
-        end
-    end);
-end);
-
-j:AddButton("BlatantCC", function()
-    g("rbxassetid://6228337171");
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/vxyo/RevNigga/refs/heads/main/FreeForeverBlatantCC"))();
     end)
+    
+    controlPanel.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and isDragging then
+            local dragDelta = input.Position - dragStartPosition
+            controlPanel.Position = UDim2.new(
+                dragStartOffset.X.Scale, 
+                dragStartOffset.X.Offset + dragDelta.X, 
+                dragStartOffset.Y.Scale, 
+                dragStartOffset.Y.Offset + dragDelta.Y
+            )
+        end
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = false
+        end
+    end)
+end)
+
+-- TCmd button
+uiLibrary:AddButton("TerminalCmd", function()
+    playSound("rbxassetid://12221967")
+    
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hm5650/TCmd/refs/heads/main/TerminalCmd", true))()
+    end)
+    
     if not success then
         warn("Failed to load BlatantCC: " .. err)
     end
-end);
+end)
 
-j:AddButton("🍪", function()
-    g("rbxassetid://7115235855");
-    a:SetCore("SendNotification", {Title="$10",Text="🍪 yuymyy",Duration=3});
-end);
+-- Cookie button (fun easter egg)
+uiLibrary:AddButton("🍪", function()
+    playSound("rbxassetid://7115235855")
+    StarterGui:SetCore("SendNotification", {
+        Title = "$10",
+        Text = "🍪 yuymyy",
+        Duration = 3
+    })
+end)
 
-if (p and q) then
-    p.Visible = false;
-    q.Visible = false;
+-- Initialize button visibility
+if hitboxIncreaseButton and hitboxDecreaseButton then
+    hitboxIncreaseButton.Visible = false
+    hitboxDecreaseButton.Visible = false
 end
-if (r and s) then
-    r.Visible = false;
-    s.Visible = false;
+
+if fovIncreaseButton and fovDecreaseButton then
+    fovIncreaseButton.Visible = false
+    fovDecreaseButton.Visible = false
 end
 
 -- Cleanup function
 local function cleanup()
     -- Clean up hitboxes
-    D()
+    resetHitboxesOnAllPlayers()
     
     -- Clean up ESP
-    for _, gui in pairs(o) do
+    for _, gui in pairs(espGuis) do
         if gui then
             gui:Destroy()
         end
     end
-    o = {}
+    espGuis = {}
     
     -- Clean up connections
     if getgenv().BrightnessConnection then
         getgenv().BrightnessConnection:Disconnect()
     end
+    
     if getgenv().AimAssistConnection then
         getgenv().AimAssistConnection:Disconnect()
     end
+    
     if getgenv().cameraLockConnection then
         getgenv().cameraLockConnection:Disconnect()
     end
-    if F then
-        coroutine.close(F)
+    
+    if hitboxCoroutine then
+        coroutine.close(hitboxCoroutine)
     end
 end
 
