@@ -61,7 +61,7 @@ if not success or not uiLibrary then
 end
 
 -- Configure UI
-uiLibrary:SetTitle("Hitblox (v4.5)")
+uiLibrary:SetTitle("Hitblox (v4.6)")
 uiLibrary:SetIcon("http://www.roblox.com/asset/?id=91738788645337")
 uiLibrary:SetTheme("HighContrast")
 task.wait(0.1)
@@ -82,6 +82,12 @@ end
 
 local function applyHitbox(character)
     if not character then return end
+    
+    -- Only apply hitbox if character is alive
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.Health <= 0 then
+        return
+    end
     
     -- HumanoidRootPart modifications
     local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -295,32 +301,61 @@ local function toggleESP(enabled)
     end
 end
 
--- Player tracking system
+-- Player tracking system with death/respawn handling
 local function trackPlayer(player)
     if not player then return end
     
     if isEnemy(player) then
-        -- Handle character added
+        -- Handle character added (respawn)
         player.CharacterAdded:Connect(function(character)
-            task.wait(1)
+            task.wait(1) -- Wait for character to fully load
+            
+            -- Track humanoid for death events
+            local humanoid = character:WaitForChild("Humanoid")
+            
+            -- Function to handle hitbox state based on health
+            local function updateHitboxState()
+                if hitboxEnabled then
+                    if humanoid.Health > 0 then
+                        -- Character is alive - apply expanded hitbox
+                        applyHitbox(character)
+                    else
+                        -- Character is dead - reset to normal hitbox
+                        resetHitbox(character)
+                    end
+                end
+            end
+            
+            -- Initial update
+            updateHitboxState()
+            
+            -- Connect health changed event
+            humanoid.HealthChanged:Connect(updateHitboxState)
+            
+            -- Handle ESP if enabled
             if espEnabled then
                 createESP(player)
-            end
-            if hitboxEnabled then
-                resetHitbox(character)
-            end
-        end)
-        
-        -- Handle character removed
-        player.CharacterRemoving:Connect(function()
-            if player.Character then
-                destroyCharacterParts(player.Character)
             end
         end)
         
         -- Handle existing character
-        if player.Character and espEnabled then
-            createESP(player)
+        if player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- Initial hitbox state
+                if hitboxEnabled then
+                    if humanoid.Health > 0 then
+                        applyHitbox(player.Character)
+                    else
+                        resetHitbox(player.Character)
+                    end
+                end
+                
+                -- Handle ESP if enabled
+                if espEnabled then
+                    createESP(player)
+                end
+            end
         end
     end
 end
