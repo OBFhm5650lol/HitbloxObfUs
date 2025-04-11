@@ -89,38 +89,81 @@ local function applyHitbox(character)
         return
     end
     
+    -- Handle R15 characters differently
+    local isR15 = humanoid and humanoid.RigType == Enum.HumanoidRigType.R15
+    
     -- HumanoidRootPart modifications
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    local rootPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
     if rootPart then
+        if not rootPart:FindFirstChild("OriginalSize") then
+            local originalSize = Instance.new("Vector3Value")
+            originalSize.Name = "OriginalSize"
+            originalSize.Value = rootPart.Size
+            originalSize.Parent = rootPart
+        end
+        
         rootPart.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
         rootPart.Transparency = hitboxTransparency
         rootPart.BrickColor = BrickColor.new("Dark red")
         rootPart.Material = Enum.Material.ForceField
         rootPart.CanCollide = false
         
-        if not rootPart:FindFirstChild("OriginalSize") then
-            local originalSize = Instance.new("Vector3Value")
-            originalSize.Name = "OriginalSize"
-            originalSize.Value = Vector3.new(2, 2, 1)
-            originalSize.Parent = rootPart
+        -- For R15, we need to adjust the other parts too
+        if isR15 then
+            local lowerTorso = character:FindFirstChild("LowerTorso")
+            if lowerTorso then
+                if not lowerTorso:FindFirstChild("OriginalSize") then
+                    local originalSize = Instance.new("Vector3Value")
+                    originalSize.Name = "OriginalSize"
+                    originalSize.Value = lowerTorso.Size
+                    originalSize.Parent = lowerTorso
+                end
+                lowerTorso.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                lowerTorso.Transparency = hitboxTransparency
+                lowerTorso.BrickColor = BrickColor.new("Dark red")
+                lowerTorso.Material = Enum.Material.ForceField
+                lowerTorso.CanCollide = false
+            end
         end
     end
     
     -- Head modifications
     local head = character:FindFirstChild("Head")
     if head then
+        if not head:FindFirstChild("OriginalSize") then
+            local originalSize = Instance.new("Vector3Value")
+            originalSize.Name = "OriginalSize"
+            originalSize.Value = head.Size
+            originalSize.Parent = head
+        end
+        
         head.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
         head.Transparency = hitboxTransparency
         head.BrickColor = BrickColor.new("Bright red")
         head.Material = Enum.Material.ForceField
         head.CanCollide = false
         head.Massless = true
-        
-        if not head:FindFirstChild("OriginalSize") then
-            local originalSize = Instance.new("Vector3Value")
-            originalSize.Name = "OriginalSize"
-            originalSize.Value = Vector3.new(2, 1, 1)
-            originalSize.Parent = head
+    end
+    
+    -- For R15, adjust other important parts
+    if isR15 then
+        local partsToAdjust = {"UpperTorso", "LowerTorso", "LeftUpperArm", "RightUpperArm", "LeftUpperLeg", "RightUpperLeg"}
+        for _, partName in ipairs(partsToAdjust) do
+            local part = character:FindFirstChild(partName)
+            if part then
+                if not part:FindFirstChild("OriginalSize") then
+                    local originalSize = Instance.new("Vector3Value")
+                    originalSize.Name = "OriginalSize"
+                    originalSize.Value = part.Size
+                    originalSize.Parent = part
+                end
+                
+                part.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                part.Transparency = hitboxTransparency
+                part.BrickColor = BrickColor.new("Dark red")
+                part.Material = Enum.Material.ForceField
+                part.CanCollide = false
+            end
         end
     end
 end
@@ -129,7 +172,7 @@ local function resetHitbox(character)
     if not character then return end
     
     -- Reset HumanoidRootPart
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    local rootPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
     if rootPart and rootPart:FindFirstChild("OriginalSize") then
         rootPart.Size = rootPart.OriginalSize.Value
         rootPart.Transparency = 1
@@ -147,6 +190,24 @@ local function resetHitbox(character)
         head.Material = Enum.Material.Plastic
         head.CanCollide = true
         head.Massless = false
+    end
+    
+    -- Reset R15 parts
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local isR15 = humanoid and humanoid.RigType == Enum.HumanoidRigType.R15
+    
+    if isR15 then
+        local partsToReset = {"LowerTorso", "UpperTorso", "LeftUpperArm", "RightUpperArm", "LeftUpperLeg", "RightUpperLeg"}
+        for _, partName in ipairs(partsToReset) do
+            local part = character:FindFirstChild(partName)
+            if part and part:FindFirstChild("OriginalSize") then
+                part.Size = part.OriginalSize.Value
+                part.Transparency = 1
+                part.BrickColor = BrickColor.new("Medium stone grey")
+                part.Material = Enum.Material.Plastic
+                part.CanCollide = true
+            end
+        end
     end
 end
 
@@ -225,7 +286,7 @@ local function createESP(player)
     
     if isEnemy(player) then
         local head = player.Character:FindFirstChild("Head")
-        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart") or player.Character:FindFirstChild("UpperTorso")
         local targetPart = head or rootPart
         
         if not targetPart then return end
@@ -252,13 +313,18 @@ local function createESP(player)
         
         -- Update function for dynamic sizing
         local function updateEspSize()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and 
-               localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local distance = (localPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                local minSize = 10
-                local maxSize = 100
-                local calculatedSize = math.clamp(maxSize - (distance * 0.5), minSize, maxSize)
-                espGui.Size = UDim2.new(0, calculatedSize, 0, calculatedSize * 0.5)
+            if player.Character and (player.Character:FindFirstChild("HumanoidRootPart") or player.Character:FindFirstChild("UpperTorso")) and 
+               localPlayer.Character and (localPlayer.Character:FindFirstChild("HumanoidRootPart") or localPlayer.Character:FindFirstChild("UpperTorso")) then
+                local playerRoot = player.Character:FindFirstChild("HumanoidRootPart") or player.Character:FindFirstChild("UpperTorso")
+                local localRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart") or localPlayer.Character:FindFirstChild("UpperTorso")
+                
+                if playerRoot and localRoot then
+                    local distance = (localRoot.Position - playerRoot.Position).Magnitude
+                    local minSize = 10
+                    local maxSize = 100
+                    local calculatedSize = math.clamp(maxSize - (distance * 0.5), minSize, maxSize)
+                    espGui.Size = UDim2.new(0, calculatedSize, 0, calculatedSize * 0.5)
+                end
             end
         end
         
@@ -583,7 +649,7 @@ uiLibrary:AddButton("AimLock", function()
         local localCharacter = localPlayer.Character
         if not localCharacter then return false end
         
-        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart")
+        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart") or localCharacter:FindFirstChild("UpperTorso")
         if not rootPart then return false end
         
         local ray = Ray.new(rootPart.Position, (targetPosition - rootPart.Position).Unit * 1000)
@@ -603,7 +669,7 @@ uiLibrary:AddButton("AimLock", function()
         
         if not localCharacter then return nil end
         
-        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart")
+        local rootPart = localCharacter:FindFirstChild("HumanoidRootPart") or localCharacter:FindFirstChild("UpperTorso")
         if not rootPart then return nil end
         
         local screenGui = localPlayer:FindFirstChild("PlayerGui"):FindFirstChild("ScreenGui")
@@ -616,7 +682,7 @@ uiLibrary:AddButton("AimLock", function()
         for _, player in pairs(game.Players:GetPlayers()) do
             if isEnemyForAimAssist(player) and player.Character then
                 local character = player.Character
-                local enemyRoot = character:FindFirstChild("HumanoidRootPart")
+                local enemyRoot = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
                 
                 if enemyRoot then
                     local screenPosition, onScreen = camera:WorldToScreenPoint(enemyRoot.Position)
@@ -640,7 +706,7 @@ uiLibrary:AddButton("AimLock", function()
             local target = findBestTarget()
             
             if target and target.Character then
-                local enemyRoot = target.Character:FindFirstChild("HumanoidRootPart")
+                local enemyRoot = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("UpperTorso")
                 
                 if enemyRoot then
                     local camera = workspace.CurrentCamera
