@@ -12,6 +12,26 @@ while not localPlayer do
     localPlayer = Players.LocalPlayer
 end
 
+-- Improved team detection function
+local function isEnemy(player)
+    if player == localPlayer then
+        return false
+    end
+    
+    -- Check if the game has teams
+    local teams = game:GetService("Teams"):GetTeams()
+    if #teams > 1 then
+        -- Team-based game
+        if localPlayer.Team == nil or player.Team == nil then
+            return true  -- Players not in any team are considered enemies
+        end
+        return localPlayer.Team ~= player.Team
+    else
+        -- Free-for-all game (no teams)
+        return true
+    end
+end
+
 -- Sound function with better error handling
 local function playSound(soundId)
     local sound = Instance.new("Sound")
@@ -76,10 +96,6 @@ local espGuis = {} -- Stores ESP GUI objects
 local hitboxIncreaseButton, hitboxDecreaseButton, fovIncreaseButton, fovDecreaseButton
 
 -- Helper functions
-local function isEnemy(player)
-    return (player ~= localPlayer) and ((player.Team ~= localPlayer.Team) or (player.Team == nil))
-end
-
 local function applyHitbox(character)
     if not character then return end
     
@@ -633,15 +649,9 @@ uiLibrary:AddButton("AimLock", function()
         end
     end)
     
-    -- Enemy check function
+    -- Enemy check function for aim assist (uses the same isEnemy function)
     local function isEnemyForAimAssist(player)
-        if game:GetService("Teams") and #game:GetService("Teams"):GetTeams() > 1 then
-            local localTeam = localPlayer.Team
-            local playerTeam = player.Team
-            return localTeam ~= nil and playerTeam ~= nil and localTeam ~= playerTeam
-        else
-            return player ~= localPlayer
-        end
+        return isEnemy(player)
     end
     
     -- Visibility check function
