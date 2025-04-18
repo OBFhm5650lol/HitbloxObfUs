@@ -15,7 +15,7 @@ end
 -- Improved team detection function
 local function isEnemy(player)
     if player == localPlayer then
-        return false
+        return false -- Always return false for local player
     end
     
     -- Check if the game has teams
@@ -81,7 +81,7 @@ if not success or not uiLibrary then
 end
 
 -- Configure UI
-uiLibrary:SetTitle("Hitblox (v4.6)")
+uiLibrary:SetTitle("Hitblox (v4.7)")
 uiLibrary:SetIcon("http://www.roblox.com/asset/?id=91738788645337")
 uiLibrary:SetTheme("HighContrast")
 task.wait(0.1)
@@ -98,6 +98,12 @@ local hitboxIncreaseButton, hitboxDecreaseButton, fovIncreaseButton, fovDecrease
 -- Helper functions
 local function applyHitbox(character)
     if not character then return end
+    
+    -- Skip if this is the local player's character
+    local player = Players:GetPlayerFromCharacter(character)
+    if player and player == localPlayer then
+        return
+    end
     
     -- Only apply hitbox if character is alive
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -187,6 +193,12 @@ end
 local function resetHitbox(character)
     if not character then return end
     
+    -- Skip if this is the local player's character
+    local player = Players:GetPlayerFromCharacter(character)
+    if player and player == localPlayer then
+        return
+    end
+    
     -- Reset HumanoidRootPart
     local rootPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso")
     if rootPart and rootPart:FindFirstChild("OriginalSize") then
@@ -229,6 +241,12 @@ end
 
 local function destroyCharacterParts(character)
     if not character then return end
+    
+    -- Skip if this is the local player's character
+    local player = Players:GetPlayerFromCharacter(character)
+    if player and player == localPlayer then
+        return
+    end
     
     for _, descendant in ipairs(character:GetDescendants()) do
         if descendant:IsA("BasePart") then
@@ -298,7 +316,7 @@ local function createESP(player)
         espGuis[player] = nil
     end
     
-    if not player or not player.Character then return end
+    if not player or not player.Character or player == localPlayer then return end
     
     if isEnemy(player) then
         local head = player.Character:FindFirstChild("Head")
